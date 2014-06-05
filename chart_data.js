@@ -9,7 +9,7 @@ var lastest_timestamp;
 var olhc_list = [];
 
 //loop();
-getOLHCPeriod(1401235200 , 1401235200+40000, 0);
+getOLHCPeriod(1401035200 , 1401275200, 0);
 //getNewOLHC(0);
 
 function loop() {
