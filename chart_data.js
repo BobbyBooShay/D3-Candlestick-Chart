@@ -67,7 +67,7 @@ function mergeOldOLHC(list) {
 
     //merge
     console.log('old ' + oldest_timestamp + ' lastest ' + lastest_timestamp);
-    refresh();
+    init();
 }
 
 function updateOldestTimestamp(oldest) {

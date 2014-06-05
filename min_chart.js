@@ -9,14 +9,25 @@ var margin = {top: 20, right: 10, bottom: 20, left: 10},
 
 var red = "rgb(224,31,38)";
 green = "rgb(76, 214, 15)"
+var background_color = "white";
 
 var show_text = false;
 show_bound = true;
 
-var window_size = 29;
-var background_color = "white";
 
-var group;
+
+var window_size = 30;
+var olhc_group;
+var volume_group;
+var svg = d3.select("body").append("svg").attr("width", outer_width).attr("height", outer_height + volume_height);
+
+function init()
+{
+    var dataset = limit_dataset(window_size, 0);
+    update_olhc(svg, dataset);
+    update_volume(svg, dataset);    
+}
+
 
 function limit_dataset(window_size, offset_from_back) {
     return _.first(_.last(olhc_list, window_size + offset_from_back), window_size);
@@ -25,26 +36,14 @@ function limit_dataset(window_size, offset_from_back) {
 function refresh(offset) {
     var dataset = limit_dataset(window_size, offset);
     console.log(dataset);
-
-    var svg = d3.select("body").append("svg").attr("width", outer_width).attr("height", outer_height + volume_height);
-
+    olhc_group.data(dataset);
+    volume_group.data(dataset);
+    
     update_olhc(svg, dataset);
     update_volume(svg, dataset);
     drag(svg);
  
-    console.log('init');
-}
-
-
-function update(offset) {
-    var dataset = limit_dataset(window_size, offset);
-    group.data(dataset);
-    
-    var svg = d3.select("body").append("svg").attr("width", outer_width).attr("height", outer_height + volume_height);
-    update_olhc(svg, dataset);
-    update_volume(svg, dataset);
-    
-    console.log('updated');
+    console.log('refresh');
 }
 
 function drag(svg)
@@ -75,7 +74,7 @@ function dragged(d, i) {
     }
     else
     {
-        update(1);
+        refresh(1);
         //getOLHCPeriod(oldest_timestamp-10000, oldest_timestamp, 0);
         console.log('dec');
     }
@@ -137,7 +136,7 @@ function update_olhc(svg, dataset)
     .call(price_axis);
 
 
-    group = olhc.append("g").selectAll("g")
+    olhc_group = olhc.append("g").selectAll("g")
     .data(dataset)
     .enter()
     .append("g");
@@ -145,7 +144,7 @@ function update_olhc(svg, dataset)
     
 
     //line
-    group.append("line")
+    olhc_group.append("line")
     .attr("x1", function(d, i) {
         return x_scale(i) + x_scale.rangeBand()/2;
     })
@@ -182,13 +181,13 @@ function update_olhc(svg, dataset)
 
     if(show_text)
     {
-        group.append("text")
+        olhc_group.append("text")
         .attr("x", function(d, i){ return x_scale(i) + x_scale.rangeBand()/2; })
         .attr("y", function(d, i){ return y_scale(l(d)); })
         .text(function(d,i){ return l(d); })
         .attr("font-size", "5");
 
-        group.append("text")
+        olhc_group.append("text")
         .attr("x", function(d, i){ return x_scale(i) + x_scale.rangeBand()/2; })
         .attr("y", function(d, i){ return (y_scale(l(d))) + (y_scale(h(d)) - y_scale(l(d))); })
         .text(function(d,i){ return h(d); })
@@ -197,7 +196,7 @@ function update_olhc(svg, dataset)
     }
 
     //rect
-    group.append("rect")
+    olhc_group.append("rect")
     .attr("x", function(d, i) {
         return x_scale(i);
     })
@@ -223,13 +222,13 @@ function update_olhc(svg, dataset)
 
     if(show_text)
     {
-        group.append("text")
+        olhc_group.append("text")
         .attr("x", function(d, i){ return x_scale(i); })
         .attr("y", function(d, i){ return y_scale(Math.max(c(d), o(d))); })
         .text(function(d,i){ return Math.max(c(d), o(d)); })
         .attr("font-size", "7");
 
-        group.append("text")
+        olhc_group.append("text")
         .attr("x", function(d, i){ return x_scale(i); })
         .attr("y", function(d, i){ return y_scale(Math.max(c(d), o(d))) + Math.abs(y_scale(o(d))-y_scale(c(d))); })
         .text(function(d,i){ return Math.min(c(d), o(d)); })
@@ -276,7 +275,7 @@ function update_volume(svg, dataset)
     .attr("transform", "translate(" + width + ",0)")
     .call(volume_axis);
 
-    var group = volume.append("g").selectAll("g")
+    volume_group = volume.append("g").selectAll("g")
     .data(dataset)
     .enter()
     .append("g");
@@ -284,7 +283,7 @@ function update_volume(svg, dataset)
     
 
     //rect
-    group.append("rect")
+    volume_group.append("rect")
     .attr("x", function(d, i) {
         return x_scale(i);
     })
