@@ -10,7 +10,7 @@ conn.connectSync('localhost', 'root', 'dlwlsdn', 'bitstamp');
 conn.setCharsetSync('utf8');
 
 var sockets_list = [];
-var graph_type = '1m';
+var graph_type = '15m';
 
 var app = express();
 app.get('/period', function(req, res){
