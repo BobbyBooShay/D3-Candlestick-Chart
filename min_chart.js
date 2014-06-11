@@ -15,7 +15,7 @@ var show_text = false;
 show_bound = true;
 
 
-
+var unit_width = 0;
 var window_size = 30;
 var olhc_group;
 var volume_group;
@@ -26,6 +26,7 @@ function init()
     var dataset = limit_dataset(window_size, 0);
     update_olhc(svg, dataset);
     update_volume(svg, dataset);    
+    drag(svg);
 }
 
 
@@ -33,17 +34,22 @@ function limit_dataset(window_size, offset_from_back) {
     return _.first(_.last(olhc_list, window_size + offset_from_back), window_size);
 }
 
-function refresh(offset) {
-    var dataset = limit_dataset(window_size, offset);
-    console.log(dataset);
+var move_offset = 0;
+function refresh(old_offset) {
+    move_offset += old_offset;
+    
+    if(move_offset < 0)
+        move_offset = 0;
+    
+    var dataset = limit_dataset(window_size, move_offset);
+    
+        
     olhc_group.data(dataset);
     volume_group.data(dataset);
     
     update_olhc(svg, dataset);
     update_volume(svg, dataset);
     drag(svg);
- 
-    console.log('refresh');
 }
 
 function drag(svg)
@@ -54,6 +60,7 @@ function drag(svg)
     .on("dragend", dragended);
     
     svg.call(drag);
+    
 }
 
 var drag_start_x;
@@ -67,18 +74,20 @@ function dragstarted(d, i) {
 
 function dragged(d, i) {
     var point = d3.mouse(this), p = {x: point[0], y: point[1] };
-    if(drag_start_x > p.x)
+    var move_amount = Math.abs(drag_start_x - p.x);
+    var move_size = Math.ceil(move_amount / unit_width);
+    
+    if(move_amount > unit_width)
     {
         
-        console.log('inc');
+        
+        if(drag_start_x > p.x)
+            refresh(-1);
+        else
+            refresh(1);
+        
+        drag_start_x = p.x;
     }
-    else
-    {
-        refresh(1);
-        //getOLHCPeriod(oldest_timestamp-10000, oldest_timestamp, 0);
-        console.log('dec');
-    }
-
 }
 
 function dragended(d, i) {
@@ -112,9 +121,12 @@ function update_olhc(svg, dataset)
     var x_scale = d3.scale.ordinal()
     .domain(d3.range(dataset.length))
     .rangeRoundBands([0, width - axis_width], 0.1);
-
+    
+    //스크롤을 위한 단위너비값 저장
+    unit_width = x_scale.rangeBand();
+    
     var y_scale = d3.scale.linear()
-    .domain([min - min/100, max + max/100])
+    .domain([min - min/250, max + max/250])
     .range([height, 0]);
 
 
