@@ -12,8 +12,7 @@ var red = "rgb(224,31,38)";
 green = "rgb(76, 214, 15)"
 var background_color = "white";
 
-var show_text = false;
-show_bound = true;
+var show_bound = true;
 
 
 
@@ -62,8 +61,8 @@ function refresh(offset) {
 
     if(move_offset < 0)
         move_offset = 0;
-    if(move_offset > olhc_list.length - window_size)
-        move_offset = olhc_list.length - window_size;
+    if(move_offset > olhc_list.length - window_size * (last_zoom_scale))
+        move_offset = olhc_list.length - window_size * (last_zoom_scale);
     
     
 
@@ -89,10 +88,11 @@ function mouse()
 
         if(move_amount > unit_width)
         {
+            var move_unit = Math.abs(drag_start_x - p.x)/unit_width;
             if(drag_start_x > p.x)
-                refresh(-1);
+                refresh(-move_unit);
             else
-                refresh(1);
+                refresh(move_unit);
 
             drag_start_x = p.x;
         }
@@ -103,14 +103,9 @@ function mouse()
     .scaleExtent([1,4])
     .on("zoom", function(){
         var scale = d3.event.scale;
-        console.log('zoom ' + scale);
-        
         
         if(last_zoom_scale != scale)
             refresh(0);
-        
-        
-        
         last_zoom_scale = scale;
     });
 
@@ -149,7 +144,9 @@ function update_olhc(dataset)
     olhc.selectAll("g.olhc").remove();
     olhc_group = olhc.selectAll("g.olhc").data(dataset).enter();
 
-    olhc_group.append("g").attr("class", "olhc").append("line")
+    var g = olhc_group.append("g").attr("class", "olhc");
+    
+    g.append("line")
     .attr("style", function(d) { return (o(d) <= c(d)?"stroke:" + green + ";stroke-width:0.5":"stroke:" + red + ";stroke-width:0.5"); })
     .attr("x1", function(d, i) { return x_scale(i) + x_scale.rangeBand()/2; })
     .attr("x2", function(d, i) { return x_scale(i) + x_scale.rangeBand()/2; })
@@ -163,47 +160,13 @@ function update_olhc(dataset)
 
         return (y_scale(l(d))) + (y_scale(h(d)) - y_scale(l(d)));
     });
-
-
-    if(show_text)
-    {
-        olhc_group.append("text")
-        .attr("x", function(d, i){ return x_scale(i) + x_scale.rangeBand()/2; })
-        .attr("y", function(d, i){ return y_scale(l(d)); })
-        .text(function(d,i){ return l(d); })
-        .attr("font-size", "5");
-
-        olhc_group.append("text")
-        .attr("x", function(d, i){ return x_scale(i) + x_scale.rangeBand()/2; })
-        .attr("y", function(d, i){ return (y_scale(l(d))) + (y_scale(h(d)) - y_scale(l(d))); })
-        .text(function(d,i){ return h(d); })
-        .attr("font-size", "5");
-
-    }
-
-    //rect
-    olhc_group.append("g").attr("class", "olhc").append("rect")
+    
+    g.append("rect")
     .attr("x", function(d, i) { return x_scale(i); })
     .attr("width", x_scale.rangeBand())
     .attr("y", function(d, i) { return y_scale(Math.max(c(d), o(d))); })
     .attr("height", function(d) { return Math.abs(y_scale(o(d))-y_scale(c(d))); })
     .attr("style", function(d) { return (o(d) <= c(d)?"fill:" + background_color + ";stroke:" + green + ";stroke-width:1":"fill:" + red); });
-
-
-    if(show_text)
-    {
-        olhc_group.append("text")
-        .attr("x", function(d, i){ return x_scale(i); })
-        .attr("y", function(d, i){ return y_scale(Math.max(c(d), o(d))); })
-        .text(function(d,i){ return Math.max(c(d), o(d)); })
-        .attr("font-size", "7");
-
-        olhc_group.append("text")
-        .attr("x", function(d, i){ return x_scale(i); })
-        .attr("y", function(d, i){ return y_scale(Math.max(c(d), o(d))) + Math.abs(y_scale(o(d))-y_scale(c(d))); })
-        .text(function(d,i){ return Math.min(c(d), o(d)); })
-        .attr("font-size", "10");    
-    }
 
 
 }
@@ -254,14 +217,6 @@ function update_volume(dataset)
     .attr("height", function(d) { return volume_height - y_scale(v(d)); })
     .attr("style", function(d) { return (o(d) <= c(d)?"fill:" + green + ";":"fill:" + red + ";"); });
 
-    if(show_text)
-    {
-        group.append("text")
-        .attr("x", function(d, i){ return x_scale(i); })
-        .attr("y", function(d, i){ return y_scale(v(d)); })
-        .text(function(d,i){ return v(d); })
-        .attr("font-size", "7");    
-    }
 }
 
 
