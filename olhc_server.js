@@ -6,7 +6,7 @@ var http = require('http'),
     conn = mysql.createConnectionSync();
 
 
-conn.connectSync('localhost', 'root', 'dlwlsdn', 'bitstamp');
+conn.connectSync('localhost', 'root', '', 'bitstamp');
 conn.setCharsetSync('utf8');
 
 var sockets_list = [];
@@ -15,6 +15,9 @@ var graph_type = '15m';
 var app = express();
 app.get('/period', function(req, res){
   getOLHCPeriod(req.query.start, req.query.end, graph_type, function(err, result) {
+    if(err)
+      console.log('SQLError ' + err);
+    
     res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
     res.end(result);
   });
@@ -22,6 +25,9 @@ app.get('/period', function(req, res){
 
 app.get('/new', function(req, res){
   getNewOLHC(req.query.start, graph_type, function(err, result) {
+    if(err)
+      console.log('SQLError ' + err);
+    
     res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
     res.end(result);
   });
@@ -29,6 +35,9 @@ app.get('/new', function(req, res){
 
 app.get('/', function(req, res){
   getOLHC(graph_type, function(err, result) {
+    if(err)
+      console.log('SQLError ' + err);
+    
     res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
     res.end(result);
   });
@@ -70,3 +79,52 @@ function getSQL(query, callback) {
     }
   });
 }
+
+/*
+//pusher -> faye broadcasting
+var lastUpdate;
+var faye = require('faye');
+var pusher = new PusherClient ({
+    appId: 'de504dc5763aeef9ff52', key: 'de504dc5763aeef9ff52', secret:''
+  });
+//Faye server
+var bayeux = new faye.NodeAdapter({mount: '/faye', timeout: 45});
+var server = http.createServer(function(request, response) {
+    response.writeHead(200, {'Content-Type': 'text/plain', 'Access-Control-Allow-Origin':'*'});
+    var json = {"lastUpdate" : (new Date() - lastUpdate)};
+    response.end(JSON.stringify(json));
+});
+
+bayeux.attach(server);
+server.listen(8000);
+
+
+//bitstamp socket
+try
+{
+    pusherType();
+    
+}
+catch(e)
+{
+    console.log(e);
+    console.log('pusher error');
+}
+
+function pusherType() {
+    pusher.on('connect', function(){
+        console.log('connected');      
+      
+        var trade = pusher.subscribe("live_trades");
+        trade.on('success', function(a){
+            trade.on('trade', function(msg){
+                //{ price: 672.03, amount: 0.01, id: 3934930 }
+                //console.log(msg);
+                lastUpdate = new Date();
+            });
+        });
+    });
+  
+    pusher.connect();
+};
+*/

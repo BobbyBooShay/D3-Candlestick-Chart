@@ -6,27 +6,48 @@ var margin = {top: 20, right: 10, bottom: 20, left: 10},
     outer_height = 350,
     width = outer_width - margin.left - margin.right,
     height = outer_height - margin.top - margin.bottom;
+var min_max_font_size = "5";
 
 var red = "rgb(224,31,38)";
-green = "rgb(76, 214, 15)"
+    green = "rgb(76, 214, 15)"
 var background_color = "white";
 
 var show_text = false;
-show_bound = true;
+    show_bound = true;
+
 
 
 var unit_width = 0;
 var window_size = 30;
-var olhc_group;
-var volume_group;
+
 var svg = d3.select("body").append("svg").attr("width", outer_width).attr("height", outer_height + volume_height);
+var olhc = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+var volume = svg.append("g").attr("transform", "translate(" + margin.left + "," + (height + margin.top + 5) + ")");
+
+if(show_bound)
+{
+    olhc.append("rect")
+    .attr("class", "outer")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("style", "fill:" + background_color);
+}
+if(show_bound)
+{
+    var volume_rect = volume.append("rect")
+    .attr("class", "outer")
+    .attr("width", width)
+    .attr("height", volume_height)
+    .attr("style", "fill:" + background_color);    
+}
+
 
 function init()
 {
     var dataset = limit_dataset(window_size, 0);
-    update_olhc(svg, dataset);
-    update_volume(svg, dataset);    
-    drag(svg);
+    update_olhc(dataset);
+    update_volume(dataset);    
+    drag();
 }
 
 
@@ -41,18 +62,14 @@ function refresh(old_offset) {
     if(move_offset < 0)
         move_offset = 0;
     
-    var dataset = limit_dataset(window_size, move_offset);
+    var dataset = limit_dataset(window_size, move_offset);        
     
-        
-    olhc_group.data(dataset);
-    volume_group.data(dataset);
-    
-    update_olhc(svg, dataset);
-    update_volume(svg, dataset);
-    drag(svg);
+    update_olhc(dataset);
+    update_volume(dataset);
+    //drag();
 }
 
-function drag(svg)
+function drag()
 {
     var drag = d3.behavior.drag()
     .on("dragstart", dragstarted)
@@ -104,93 +121,46 @@ function h(d) { return Number(d['h']); }
 function c(d) { return Number(d['c']); }
 function v(d) { return Number(d['v']); }
 
-function update_olhc(svg, dataset)
+function update_olhc(dataset)
 {
-    var olhc = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+    
+    var height_max = d3.max(dataset, function(d) { return h(d) - l(d); });
+    var min = d3.min(dataset, function(d){  return l(d); });
+    var max = d3.max(dataset, function(d){  return h(d); });
 
-    var height_max = d3.max(dataset, function(d) {
-        return h(d) - l(d);
-    });
-    var min = d3.min(dataset, function(d){ 
-        return l(d); 
-    });
-    var max = d3.max(dataset, function(d){ 
-        return h(d); 
-    });
-
-    var x_scale = d3.scale.ordinal()
-    .domain(d3.range(dataset.length))
-    .rangeRoundBands([0, width - axis_width], 0.1);
+    var x_scale = d3.scale.ordinal().domain(d3.range(dataset.length)).rangeRoundBands([0, width - axis_width], 0.1);
+    var y_scale = d3.scale.linear().domain([min - min/250, max + max/250]).range([height, 0]);
     
     //스크롤을 위한 단위너비값 저장
     unit_width = x_scale.rangeBand();
     
-    var y_scale = d3.scale.linear()
-    .domain([min - min/250, max + max/250])
-    .range([height, 0]);
-
-
-    if(show_bound)
-    {
-        var inner_rect = olhc.append("rect")
-        .attr("class", "outer")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("style", "fill:" + background_color);
-
-    }
-
-
     var price_axis = d3.svg.axis().scale(y_scale).orient("left");
-    olhc.append("g")
-    .attr("class", "axis")
-    .attr("transform", "translate(" + width + ",0)")
-    .call(price_axis);
-
-
-    olhc_group = olhc.append("g").selectAll("g")
-    .data(dataset)
-    .enter()
-    .append("g");
     
-    
+    //add axix
+    olhc.selectAll("g.axis").remove();
+    olhc.append("g").attr("class", "axis").attr("transform", "translate(" + width + ",0)").call(price_axis);
 
     //line
-    olhc_group.append("line")
-    .attr("x1", function(d, i) {
-        return x_scale(i) + x_scale.rangeBand()/2;
-    })
-    .attr("x2", function(d, i) {
-        return x_scale(i) + x_scale.rangeBand()/2;
-    })
-    .attr("y1", function(d, i) {
-        return y_scale(l(d));
-    })
+    olhc.selectAll("g.olhc").remove();
+    olhc_group = olhc.selectAll("g.olhc").data(dataset).enter();
+    
+    olhc_group.append("g").attr("class", "olhc").append("line")
+    .attr("style", function(d) { return (o(d) <= c(d)?"stroke:" + green + ";stroke-width:0.5":"stroke:" + red + ";stroke-width:0.5"); })
+    .attr("x1", function(d, i) { return x_scale(i) + x_scale.rangeBand()/2; })
+    .attr("x2", function(d, i) { return x_scale(i) + x_scale.rangeBand()/2; })
+    .attr("y1", function(d, i) { return y_scale(l(d)); })
     .attr("y2", function(d, i) {
         //min, max 출력
         if(h(d) == max)
-        {
-            var x = x_scale(i) + x_scale.rangeBand()/2;
-            var y = y_scale(l(d)) + (y_scale(h(d)) - y_scale(l(d))) - 15;
-            add_max(d3.select(this.parentNode), max, x, y);
-        }
+            add_max(d3.select(this.parentNode), max, x_scale(i) + x_scale.rangeBand()/2, y_scale(l(d)) + (y_scale(h(d)) - y_scale(l(d))) - 15);
         else if(l(d) == min)
-        {
-            var x = x_scale(i) + x_scale.rangeBand()/2;
-            var y = y_scale(l(d)) + 15;
-            add_min(d3.select(this.parentNode), min, x, y);
-        }
+            add_min(d3.select(this.parentNode), min, x_scale(i) + x_scale.rangeBand()/2, y_scale(l(d)) + 15);
 
         return (y_scale(l(d))) + (y_scale(h(d)) - y_scale(l(d)));
-    })
-    .attr("style", function(d) {
-        if(o(d) <= c(d))
-            return "stroke:" + green + ";stroke-width:0.5";
-        else
-            return "stroke:" + red + ";stroke-width:0.5";
-
     });
-
+    
+        
     if(show_text)
     {
         olhc_group.append("text")
@@ -208,29 +178,13 @@ function update_olhc(svg, dataset)
     }
 
     //rect
-    olhc_group.append("rect")
-    .attr("x", function(d, i) {
-        return x_scale(i);
-    })
+    olhc_group.append("g").attr("class", "olhc").append("rect")
+    .attr("x", function(d, i) { return x_scale(i); })
     .attr("width", x_scale.rangeBand())
-
-    .attr("y", function(d, i) {
-        return y_scale(Math.max(c(d), o(d)));
-    })
-    .attr("height", function(d) {
-        return Math.abs(y_scale(o(d))-y_scale(c(d)));
-    })
-    .attr("style", function(d) {
-        if(o(d) <= c(d))
-        {
-            return "fill:" + background_color + ";stroke:" + green + ";stroke-width:1";    
-        }
-        else
-        {
-            return "fill:" + red;    
-        }
-    });
-
+    .attr("y", function(d, i) { return y_scale(Math.max(c(d), o(d))); })
+    .attr("height", function(d) { return Math.abs(y_scale(o(d))-y_scale(c(d))); })
+    .attr("style", function(d) { return (o(d) <= c(d)?"fill:" + background_color + ";stroke:" + green + ";stroke-width:1":"fill:" + red); });
+        
 
     if(show_text)
     {
@@ -246,24 +200,12 @@ function update_olhc(svg, dataset)
         .text(function(d,i){ return Math.min(c(d), o(d)); })
         .attr("font-size", "10");    
     }
-
+    
 
 }
-function update_volume(svg, dataset)
+function update_volume(dataset)
 {
     //volume
-    var volume = svg.append("g").attr("transform", "translate(" + margin.left + "," + (height + margin.top + 5) + ")");
-
-    if(show_bound)
-    {
-        var volume_rect = volume.append("rect")
-        .attr("class", "outer")
-        .attr("width", width)
-        .attr("height", volume_height)
-        .attr("style", "fill:" + background_color);    
-    }
-
-
     var max_dataset = d3.max(dataset, function(d){ 
         return Number(v(d)); 
     });
@@ -276,71 +218,37 @@ function update_volume(svg, dataset)
     var y_scale = d3.scale.linear()
     .domain([0, max_volume])
     .range([volume_height, 0]);
-
     
     var ticks = [max_volume/2, max_volume];
     ticks.push(Number(_.last(dataset)['v']));
     
     var volume_axis = d3.svg.axis().scale(y_scale).orient("left").tickValues(ticks).tickFormat(d3.format(",.0f"));
-    volume.append("g")
-    .attr("class", "axis")
-    .attr("transform", "translate(" + width + ",0)")
-    .call(volume_axis);
-
-    volume_group = volume.append("g").selectAll("g")
-    .data(dataset)
-    .enter()
-    .append("g");
     
-    
+    //add axis
+    volume.selectAll("g.axis").remove();
+    volume.append("g").attr("class", "axis").attr("transform", "translate(" + width + ",0)").call(volume_axis);
 
     //rect
-    volume_group.append("rect")
-    .attr("x", function(d, i) {
-        return x_scale(i);
-    })
+    volume.selectAll("g.volume").remove();
+    volume_group = volume.selectAll("g.volume").data(dataset);
+    
+    volume_group.enter().append("g").attr("class", "volume").append("rect")
+    .attr("x", function(d, i) { return x_scale(i); })
     .attr("width", x_scale.rangeBand())
-
     .attr("y", function(d, i) {
-        if(i >= dataset.length-1)
-        {
-
-            var node = d3.select(this.parentNode);
-            node.append("line")
-            .attr("x1", function(d) {
-                return x_scale(i);
-            })
-            .attr("x2", function(d) {
-                return x_scale(i) + width - x_scale(i) - v(d).toString().width();
-            })
-            .attr("y1", function(d) {
-                return y_scale(v(d));
-            })
-            .attr("y2", function(d) {
-                return y_scale(v(d));
-            })
-            .attr("style", function(d) {
-                return "stroke:black;stroke-width:1";
-            });
-
-
+        //draw last volume
+        if(i >= dataset.length-1) {
+            var node = d3.select(this.parentNode).append("line")
+            .attr("x1", function(d) { return x_scale(i); })
+            .attr("x2", function(d) { return x_scale(i) + width - x_scale(i) - v(d).toString().width(); })
+            .attr("y1", function(d) { return y_scale(v(d)); })
+            .attr("y2", function(d) { return y_scale(v(d)); })
+            .attr("style", function(d) { return "stroke:black;stroke-width:1"; });
         }
-        
         return y_scale(v(d));
     })
-    .attr("height", function(d) {
-        return volume_height - y_scale(v(d));
-    })
-    .attr("style", function(d) {
-        if(o(d) <= c(d))
-        {
-            return "fill:" + green + ";volume:" + v(d);    
-        }
-        else
-        {
-            return "fill:" + red + ";volume:" + v(d);    
-        }
-    });
+    .attr("height", function(d) { return volume_height - y_scale(v(d)); })
+    .attr("style", function(d) { return (o(d) <= c(d)?"fill:" + green + ";":"fill:" + red + ";"); });
 
     if(show_text)
     {
@@ -350,14 +258,8 @@ function update_volume(svg, dataset)
         .text(function(d,i){ return v(d); })
         .attr("font-size", "7");    
     }
-
 }
-function to_localtime(timestamp)
-{
-    var date = new Date(timestamp * 1000);
-    return (date.toLocaleDateString() + " " + date.toLocaleTimeString());
 
-}
 
 
 
@@ -375,7 +277,6 @@ function to_localtime(timestamp)
 
 function add_max(node, value, x, y) {
     var text = add_text(node, x, y);
-
 
     text.append("tspan")
     .attr("x", x).attr("dy", 0)
@@ -402,14 +303,16 @@ function add_min(node, value, x, y) {
 
 function add_text(node, x, y) {
     return node.append("text")            
-    .attr("font-size", "5")
+    .attr("font-size", min_max_font_size)
     .attr("text-anchor", "middle")
     .attr("x", x)
     .attr("y", y);
 }
 
+//util
+
 String.prototype.width = function(font) {
-    var f = font || '5px arial',
+    var f = font || min_max_font_size + 'px arial',
         o = $('<div>' + this + '</div>')
     .css({'position': 'absolute', 'float': 'left', 'white-space': 'nowrap', 'visibility': 'hidden', 'font': f})
     .appendTo($('body')),
