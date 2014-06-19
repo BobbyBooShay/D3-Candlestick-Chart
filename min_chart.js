@@ -103,10 +103,11 @@ function mouse()
     .scaleExtent([1,4])
     .on("zoom", function(){
         var scale = d3.event.scale;
-        
         if(last_zoom_scale != scale)
+        {
+            last_zoom_scale = scale;
             refresh(0);
-        last_zoom_scale = scale;
+        }
     });
 
     svg.call(drag);
@@ -173,18 +174,11 @@ function update_olhc(dataset)
 function update_volume(dataset)
 {
     //volume
-    var max_dataset = d3.max(dataset, function(d){ 
-        return Number(v(d)); 
-    });
+    var max_dataset = d3.max(dataset, function(d){ return Number(v(d)); });
     var max_volume = Math.ceil(max_dataset/50)*50;
 
-    var x_scale = d3.scale.ordinal()
-    .domain(d3.range(dataset.length))
-    .rangeRoundBands([0, width - axis_width], 0.1);
-
-    var y_scale = d3.scale.linear()
-    .domain([0, max_volume])
-    .range([volume_height, 0]);
+    var x_scale = d3.scale.ordinal().domain(d3.range(dataset.length)).rangeRoundBands([0, width - axis_width], 0.1);
+    var y_scale = d3.scale.linear().domain([0, max_volume]).range([volume_height, 0]);
 
     var ticks = [max_volume/2, max_volume];
     ticks.push(Number(_.last(dataset)['v']));
@@ -195,6 +189,8 @@ function update_volume(dataset)
     volume.selectAll("g.axis").remove();
     volume.append("g").attr("class", "axis").attr("transform", "translate(" + width + ",0)").call(volume_axis);
 
+    
+    console.log(dataset.length);
     //rect
     volume.selectAll("g.volume").remove();
     volume_group = volume.selectAll("g.volume").data(dataset);
