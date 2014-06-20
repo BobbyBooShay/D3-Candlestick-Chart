@@ -44,3 +44,32 @@ line.current_volume {
   stroke: black;
   stroke-width: 1;
 }
+
+tspan.timestamp {
+  
+}
+
+tspan.open {
+  dx: 10px;
+}
+
+tspan.high {
+  
+}
+
+tspan.low {
+  
+}
+
+tspan.close {
+  
+}
+
+tspan.volume {
+  
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}

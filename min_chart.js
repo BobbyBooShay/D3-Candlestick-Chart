@@ -22,6 +22,17 @@ var svg = d3.select("body").append("svg").attr("class", "chart").attr("width", o
 var olhc = svg.append("g").attr("class", "olhc").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 var volume = svg.append("g").attr("class", "volume").attr("transform", "translate(" + margin.left + "," + (height + margin.top + 5) + ")");
 
+//description
+olhc.append("text").attr("transform", "translate(" + margin.left + "," + margin.top + ")").attr("class", "description").text("");
+d3.select("text.description").append("tspan").attr("class", "timestamp");
+d3.select("text.description").append("tspan").attr("class", "open");
+d3.select("text.description").append("tspan").attr("class", "high");
+d3.select("text.description").append("tspan").attr("class", "low");
+d3.select("text.description").append("tspan").attr("class", "close");
+d3.select("text.description").append("tspan").attr("class", "volume");
+
+
+
 if(show_bound)
 {
   olhc.append("rect")
@@ -127,6 +138,16 @@ function mouse()
 
   svg.call(drag);
   svg.call(zoom);
+  
+  d3.select("svg.chart").on("mouseleave", function(){
+    var text = svg.select("text.description");
+    text.select("tspan.timestamp").text('');
+    text.select("tspan.open").text('');
+    text.select("tspan.high").text('');
+    text.select("tspan.low").text('');
+    text.select("tspan.close").text('');
+    text.select("tspan.volume").text('');
+  });
 
 }
 
@@ -149,7 +170,7 @@ function update_olhc(dataset)
   axis_width = max.toString().width();
   var x_scale = d3.scale.ordinal().domain(d3.range(dataset.length)).rangeBands([0, width - axis_width], 0.1);
   var y_scale = d3.scale.linear().domain([min-((min+max)/2-min), max+(max-(min+max)/2)]).range([height, 0]);
-
+  
   //스크롤을 위한 단위너비값 저장
   unit_width = x_scale.rangeBand();
 
@@ -165,6 +186,38 @@ function update_olhc(dataset)
 
   var g = olhc_group.append("g").attr("class", "olhc");
 
+  
+  d3.select('svg.chart').append("rect")
+  .attr("class", "overlay")
+  .attr("width", outer_width)
+  .attr("height", height + margin.top + volume_height + margin.bottom)
+  .on("mousemove", function(d, i) { 
+    
+    var j = 0;
+    for(j = 0; j < dataset.length; j++)
+    {
+      if(x_scale(j) >= d3.mouse(this)[0] - x_scale.rangeBand()/2)
+        break;
+    }
+    j = j-1;
+    
+    if(j >=0 && j<dataset.length)
+    {
+      var d = dataset[j];
+      var date = moment.unix(d.t);
+      var text = svg.select("text.description");
+
+      text.select("tspan.timestamp").text('DATE: ' + date.format('YYYY-MM-DD HH:mm:SS'));
+      text.select("tspan.open").attr('dx', '2%').text('O: ' + numeral(o(d)).format('0,0.00'));
+      text.select("tspan.high").attr('dx', '2%').text('H: ' + numeral(h(d)).format('0,0.00'));
+      text.select("tspan.low").attr('dx', '2%').text('L: ' + numeral(l(d)).format('0,0.00'));
+      text.select("tspan.close").attr('dx', '2%').text('C: ' + numeral(c(d)).format('0,0.00'));
+      text.select("tspan.volume").attr('dx', '2%').text('V: ' + numeral(v(d)).format('0,0.00'));  
+      
+      
+    }
+    
+  });
   var max_x, max_y;
   var min_x, min_y;
 
