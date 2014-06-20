@@ -1,12 +1,12 @@
-var margin = {top: 20, right: 10, bottom: 20, left: 10},
-    axis_width = 30,
+var margin = {top: 10, right: 10, bottom: 20, left: 10},
     volume_height = 150,
     volume_padding = 20,
     outer_width = 600,
     outer_height = 350,
     width = outer_width - margin.left - margin.right,
     height = outer_height - margin.top - margin.bottom;
-var min_max_font_size = "5";
+
+var min_max_font_size = "10";
 
 var red = "rgb(224,31,38)";
     green = "rgb(76, 214, 15)"
@@ -17,7 +17,8 @@ var show_bound = false;
 var unit_width = 0;
 var WINDOW_SIZE = 30;
 
-var svg = d3.select("body").append("svg").attr("class", "chart").attr("width", outer_width).attr("height", outer_height + volume_height);
+//var svg = d3.select("body").append("svg").attr("class", "chart").attr("width", outer_width).attr("height", outer_height + volume_height);
+var svg = d3.select("body").append("svg").attr("class", "chart").attr("width", outer_width).attr("height", height + margin.top + volume_height + margin.bottom);
 var olhc = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 var volume = svg.append("g").attr("transform", "translate(" + margin.left + "," + (height + margin.top + 5) + ")");
 
@@ -36,6 +37,16 @@ if(show_bound)
   .attr("height", volume_height);    
 }
 
+function set_size(set_width, set_height)
+{
+  outer_width = set_width;
+  outer_height = set_height;
+  width = outer_width - margin.left - margin.right;
+  height = outer_height - margin.top - margin.bottom;
+  d3.select("svg.chart").attr("width", width).attr("height", height + margin.top + volume_height + margin.bottom);
+  
+  init();
+}
 
 function init()
 {
@@ -70,8 +81,6 @@ function refresh(offset) {
     is_loading = true;
     console.log('need more loading');
   }
-
-  //console.log(dataset);
 
   update_olhc(dataset);
   update_volume(dataset);
@@ -126,6 +135,7 @@ function h(d) { return Number(d['h']); }
 function c(d) { return Number(d['c']); }
 function v(d) { return Number(d['v']); }
 
+var axis_width = 0;
 function update_olhc(dataset)
 {
 
@@ -134,6 +144,7 @@ function update_olhc(dataset)
   var min = d3.min(dataset, function(d){  return l(d); });
   var max = d3.max(dataset, function(d){  return h(d); });
 
+  axis_width = max.toString().width();
   var x_scale = d3.scale.ordinal().domain(d3.range(dataset.length)).rangeBands([0, width - axis_width], 0.1);
   var y_scale = d3.scale.linear().domain([min - min/100, max + max/100]).range([height, 0]);
 
@@ -190,6 +201,7 @@ function update_olhc(dataset)
   add_min(olhc, min, min_x, min_y);
 
 }
+
 function update_volume(dataset)
 {
   //volume
@@ -219,11 +231,11 @@ function update_volume(dataset)
     //draw last volume
     if(i >= dataset.length-1) {
       var node = d3.select(this.parentNode).append("line")
+      .attr("class", "current_volume")
       .attr("x1", function(d) { return x_scale(i); })
       .attr("x2", function(d) { return x_scale(i) + width - x_scale(i) - v(d).toString().width(); })
       .attr("y1", function(d) { return y_scale(v(d)); })
-      .attr("y2", function(d) { return y_scale(v(d)); })
-      .attr("style", function(d) { return "stroke:black;stroke-width:1"; });
+      .attr("y2", function(d) { return y_scale(v(d)); });
     }
     return y_scale(v(d));
   })
@@ -286,8 +298,9 @@ function add_text(node, x, y) {
 
 String.prototype.width = function(font) {
   var f = font || min_max_font_size + 'px arial',
-      o = $('<div>' + this + '</div>')
-  .css({'position': 'absolute', 'float': 'left', 'white-space': 'nowrap', 'visibility': 'hidden', 'font': f})
+      o = $('<text>' + this + '</text>')
+  //.css({'position': 'absolute', 'float': 'left', 'white-space': 'nowrap', 'visibility': 'hidden', 'font': f})
+  .css({'text-anchor': 'middle'})
   .appendTo($('body')),
       w = o.width();
 
