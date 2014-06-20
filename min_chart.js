@@ -235,7 +235,7 @@ function update_volume(dataset)
       var node = d3.select(this.parentNode).append("line")
       .attr("class", "current_volume")
       .attr("x1", function(d) { return x_scale(i); })
-      .attr("x2", function(d) { return x_scale(i) + width - x_scale(i) - v(d).toString().width(); })
+      .attr("x2", function(d) { return width; })
       .attr("y1", function(d) { return y_scale(v(d)); })
       .attr("y2", function(d) { return y_scale(v(d)); });
     }
