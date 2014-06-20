@@ -6,7 +6,7 @@ var http = require('http'),
     conn = mysql.createConnectionSync();
 
 
-conn.connectSync('localhost', 'root', '', 'bitstamp');
+conn.connectSync('localhost', 'root', 'dlwlsdn', 'bitstamp');
 conn.setCharsetSync('utf8');
 
 if (!conn.connectedSync()) {

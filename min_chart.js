@@ -1,8 +1,8 @@
 var margin = {top: 10, right: 10, bottom: 20, left: 10},
-    volume_height = 150,
-    volume_padding = 20,
     outer_width = 600,
     outer_height = 350,
+    volume_height = outer_height/3,
+    volume_padding = 20,
     width = outer_width - margin.left - margin.right,
     height = outer_height - margin.top - margin.bottom;
 
@@ -19,8 +19,8 @@ var WINDOW_SIZE = 30;
 
 //var svg = d3.select("body").append("svg").attr("class", "chart").attr("width", outer_width).attr("height", outer_height + volume_height);
 var svg = d3.select("body").append("svg").attr("class", "chart").attr("width", outer_width).attr("height", height + margin.top + volume_height + margin.bottom);
-var olhc = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-var volume = svg.append("g").attr("transform", "translate(" + margin.left + "," + (height + margin.top + 5) + ")");
+var olhc = svg.append("g").attr("class", "olhc").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+var volume = svg.append("g").attr("class", "volume").attr("transform", "translate(" + margin.left + "," + (height + margin.top + 5) + ")");
 
 if(show_bound)
 {
@@ -41,10 +41,11 @@ function set_size(set_width, set_height)
 {
   outer_width = set_width;
   outer_height = set_height;
+  volume_height = outer_height/3;
   width = outer_width - margin.left - margin.right;
   height = outer_height - margin.top - margin.bottom;
   d3.select("svg.chart").attr("width", width).attr("height", height + margin.top + volume_height + margin.bottom);
-  
+  d3.select("g.volume").attr("transform", "translate(" + margin.left + "," + (height + margin.top + 5) + ")");
   init();
 }
 
@@ -144,9 +145,10 @@ function update_olhc(dataset)
   var min = d3.min(dataset, function(d){  return l(d); });
   var max = d3.max(dataset, function(d){  return h(d); });
 
+  
   axis_width = max.toString().width();
   var x_scale = d3.scale.ordinal().domain(d3.range(dataset.length)).rangeBands([0, width - axis_width], 0.1);
-  var y_scale = d3.scale.linear().domain([min - min/100, max + max/100]).range([height, 0]);
+  var y_scale = d3.scale.linear().domain([min-((min+max)/2-min), max+(max-(min+max)/2)]).range([height, 0]);
 
   //스크롤을 위한 단위너비값 저장
   unit_width = x_scale.rangeBand();
