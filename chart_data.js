@@ -50,7 +50,7 @@ function addOLHC(obj) {
   console.log('old ' + oldest_timestamp + ' lastest ' + lastest_timestamp);
 }
 
-function mergeOldOLHC(list, callback) {
+function merge_old_olhc(list, callback) {
   if(list == null || list.length <= 0)
     return;
 
@@ -74,6 +74,30 @@ function mergeOldOLHC(list, callback) {
   callback();
 }
 
+function add_to_olhc(json) {
+  //{"t":1403252441,"p":585,"v":4};
+  var key = Math.floor(json.t / graph_type) * graph_type;
+  
+  var last = _.last(olhc_list);
+  if(last.t == key)
+  {
+    var p = json.p;
+    last.c = p;
+    last.h = (last.h<p?p:last.h);
+    last.l = (last.l>p?p:last.l);
+    last.v += json.v;
+  }
+  else
+  {
+    var new_json = {'t': key, 'o':json.p,'l':json.p, 'h':json.p, 'c':json.p, 'v':json.v};
+    olhc_list.push(new_json);
+  }
+  
+  refresh(0);
+  
+  //console.log('add : ' +  JSON.stringify(json) + ', new : ' +  JSON.stringify(_.last(olhc_list)));
+}
+
 function updateOldestTimestamp(oldest) {
   if(oldest_timestamp == null || oldest_timestamp > oldest)
     oldest_timestamp = oldest;
@@ -88,7 +112,7 @@ function getOLHC(count, callback) {
     type:'GET',
     url:'http://localhost:3000/?type=' + graph_type,
     success:function(json){
-      mergeOldOLHC(json, callback);
+      merge_old_olhc(json, callback);
     },
     error:function(request,status,error){ console.log("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error); }
   });
@@ -99,7 +123,7 @@ function getOldOLHC(count, callback) {
     type:'GET',
     url:'http://localhost:3000/old?end=' + oldest_timestamp + '&type=' + graph_type,
     success:function(json){
-      mergeOldOLHC(json, callback);
+      merge_old_olhc(json, callback);
     },
     error:function(request,status,error){ console.log("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error); }
   });
@@ -110,7 +134,7 @@ function getOLHCPeriod(start_timestamp, end_timestamp, count, callback) {
     type:'GET',
     url:'http://localhost:3000/period?start=' + start_timestamp + '&end=' + end_timestamp + '&type=' + graph_type,
     success:function(json){
-      mergeOldOLHC(json, callback);
+      merge_old_olhc(json, callback);
     },
     error:function(request,status,error){ console.log("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error); }
   });
@@ -120,20 +144,23 @@ function getOLHCPeriod(start_timestamp, end_timestamp, count, callback) {
 //pusher
 function setup_pusher()
 {
+  
+  var j = {"t":1403252441,"p":585,"v":4};
+  //console.log(Math.floor(j.t / graph_type) * graph_type);
+  
   var pusher = new Pusher('de504dc5763aeef9ff52');
-
-
   var channel = pusher.subscribe("live_trades");
 
-
+  console.log('login to pusher');
   channel.bind('pusher:subscription_succeeded', function() {
     console.log('bind success');
+    
     channel.bind('trade', function(msg){
       //{ price: 672.03, amount: 0.01, id: 3934930 }
-      var json = { 't':Math.round(+new Date()/1000)-1, 'p':msg.price, 'v':msg.amount  };
-      console.log(JSON.stringify(json));
+      var json = { 't':Math.round(+new Date()/1000)-1, 'p':parseFloat(msg.price), 'v': parseFloat(msg.amount)  };
+      add_to_olhc(json);
     });
   });
 
-  console.log('login to pusher');
+  
 }

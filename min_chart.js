@@ -56,6 +56,7 @@ function limit_dataset(data_size, offset_from_back) {
 
 var move_offset = 0;
 var is_loading = false;
+
 function refresh(offset) {
     move_offset += offset;
 
@@ -74,6 +75,8 @@ function refresh(offset) {
         console.log('need more loading');
     }
     
+    //console.log(dataset);
+  
     update_olhc(dataset);
     update_volume(dataset);
 }
@@ -181,7 +184,7 @@ function update_olhc(dataset)
     .attr("style", function(d) { return (o(d) <= c(d)?"fill:" + background_color + ";stroke:" + green + ";stroke-width:1":"fill:" + red); });
 
     //add min, max
-    olhc.selectAll("tspan.min_max").remove();
+    olhc.selectAll("text.min_max").remove();
     add_max(olhc, max, max_x, max_y);
     add_min(olhc, min, min_x, min_y);
 
@@ -247,12 +250,10 @@ function add_max(node, value, x, y) {
     var text = add_text(node, x, y);
 
     text.append("tspan")
-    .attr("class", "min_max")
     .attr("x", x).attr("dy", 0)
     .text(value);
 
     text.append("tspan")
-    .attr("class", "min_max")
     .attr("x", x).attr("dy", 10)
     .text("↓");
 }
@@ -261,12 +262,10 @@ function add_min(node, value, x, y) {
     var text = add_text(node, x, y);
 
     text.append("tspan")
-    .attr("class", "min_max")
     .attr("x", x).attr("dy", 0)
     .text("↑");
 
     text.append("tspan")
-    .attr("class", "min_max")
     .attr("x", x).attr("dy", 10)
     .text(value);
 
@@ -274,7 +273,8 @@ function add_min(node, value, x, y) {
 }
 
 function add_text(node, x, y) {
-    return node.append("text")            
+    return node.append("text")       
+    .attr("class", "min_max")
     .attr("font-size", min_max_font_size)
     .attr("text-anchor", "middle")
     .attr("x", x)
