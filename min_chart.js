@@ -12,12 +12,12 @@ var red = "rgb(224,31,38)";
 green = "rgb(76, 214, 15)"
 var background_color = "white";
 
-var show_bound = true;
+var show_bound = false;
 
 
 
 var unit_width = 0;
-var window_size = 30;
+var WINDOW_SIZE = 30;
 
 var svg = d3.select("body").append("svg").attr("width", outer_width).attr("height", outer_height + volume_height);
 var olhc = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -43,15 +43,15 @@ if(show_bound)
 
 function init()
 {
-    var dataset = limit_dataset(window_size, 0);
+    var dataset = limit_dataset(WINDOW_SIZE, 0);
     update_olhc(dataset);
     update_volume(dataset);    
     mouse();
 }
 
 
-function limit_dataset(window_size, offset_from_back) {
-    return _.first(_.last(olhc_list, window_size + offset_from_back), window_size);
+function limit_dataset(data_size, offset_from_back) {
+    return _.first(_.last(olhc_list, data_size + offset_from_back), data_size);
 }
 
 var move_offset = 0;
@@ -61,13 +61,17 @@ function refresh(offset) {
 
     if(move_offset < 0)
         move_offset = 0;
-    if(move_offset > olhc_list.length - window_size * (last_zoom_scale))
-        move_offset = olhc_list.length - window_size * (last_zoom_scale);
+    if(move_offset > olhc_list.length - WINDOW_SIZE * (last_zoom_scale))
+        move_offset = olhc_list.length - WINDOW_SIZE * (last_zoom_scale);
     
     
 
-    var dataset = limit_dataset(window_size * (last_zoom_scale), move_offset);        
-
+    var dataset = limit_dataset(WINDOW_SIZE * (last_zoom_scale), move_offset);     
+    if(olhc_list.length * 0.6 < (WINDOW_SIZE * (last_zoom_scale) + move_offset))
+    {
+        console.log('need more loading');
+    }
+    
     update_olhc(dataset);
     update_volume(dataset);
 }
@@ -100,7 +104,7 @@ function mouse()
 
     
     var zoom = d3.behavior.zoom()
-    .scaleExtent([1,4])
+    .scaleExtent([1,10])
     .on("zoom", function(){
         var scale = d3.event.scale;
         if(last_zoom_scale != scale)
@@ -147,6 +151,10 @@ function update_olhc(dataset)
 
     var g = olhc_group.append("g").attr("class", "olhc");
     
+    var max_x, max_y;
+    var min_x, min_y;
+  
+    //add line
     g.append("line")
     .attr("style", function(d) { return (o(d) <= c(d)?"stroke:" + green + ";stroke-width:0.5":"stroke:" + red + ";stroke-width:0.5"); })
     .attr("x1", function(d, i) { return x_scale(i) + x_scale.rangeBand()/2; })
@@ -155,13 +163,14 @@ function update_olhc(dataset)
     .attr("y2", function(d, i) {
         //min, max 출력
         if(h(d) == max)
-            add_max(d3.select(this.parentNode), max, x_scale(i) + x_scale.rangeBand()/2, y_scale(l(d)) + (y_scale(h(d)) - y_scale(l(d))) - 15);
+            max_x = x_scale(i) + x_scale.rangeBand()/2, max_y = y_scale(l(d)) + (y_scale(h(d)) - y_scale(l(d))) - 15;
         else if(l(d) == min)
-            add_min(d3.select(this.parentNode), min, x_scale(i) + x_scale.rangeBand()/2, y_scale(l(d)) + 15);
+            min_x = x_scale(i) + x_scale.rangeBand()/2, min_y = y_scale(l(d)) + 15;
 
         return (y_scale(l(d))) + (y_scale(h(d)) - y_scale(l(d)));
     });
     
+    //add rect
     g.append("rect")
     .attr("x", function(d, i) { return x_scale(i); })
     .attr("width", x_scale.rangeBand())
@@ -169,6 +178,10 @@ function update_olhc(dataset)
     .attr("height", function(d) { return Math.abs(y_scale(o(d))-y_scale(c(d))); })
     .attr("style", function(d) { return (o(d) <= c(d)?"fill:" + background_color + ";stroke:" + green + ";stroke-width:1":"fill:" + red); });
 
+    //add min, max
+    olhc.selectAll("tspan.min_max").remove();
+    add_max(olhc, max, max_x, max_y);
+    add_min(olhc, min, min_x, min_y);
 
 }
 function update_volume(dataset)
@@ -232,10 +245,12 @@ function add_max(node, value, x, y) {
     var text = add_text(node, x, y);
 
     text.append("tspan")
+    .attr("class", "min_max")
     .attr("x", x).attr("dy", 0)
     .text(value);
 
     text.append("tspan")
+    .attr("class", "min_max")
     .attr("x", x).attr("dy", 10)
     .text("↓");
 }
@@ -244,10 +259,12 @@ function add_min(node, value, x, y) {
     var text = add_text(node, x, y);
 
     text.append("tspan")
+    .attr("class", "min_max")
     .attr("x", x).attr("dy", 0)
     .text("↑");
 
     text.append("tspan")
+    .attr("class", "min_max")
     .attr("x", x).attr("dy", 10)
     .text(value);
 
