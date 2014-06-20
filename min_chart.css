@@ -30,6 +30,12 @@ body {
     stroke-dasharray: 3, 4;
 }
 
-rect {
+rect.green {
   fill: white;
+  stroke-width:1;
+  stroke: rgb(76, 214, 15);
+}
+
+rect.red {
+  fill: rgb(224,31,38);
 }

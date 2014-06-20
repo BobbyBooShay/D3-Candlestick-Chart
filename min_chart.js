@@ -177,7 +177,7 @@ function update_olhc(dataset)
   .attr("width", x_scale.rangeBand())
   .attr("y", function(d, i) { return y_scale(Math.max(c(d), o(d))); })
   .attr("height", function(d) { return Math.abs(y_scale(o(d))-y_scale(c(d))); })
-  .attr("style", function(d) { return (o(d) <= c(d)?"stroke:" + green + ";stroke-width:1":"fill:" + red); });
+  .attr("class", function(d) { return (o(d) <= c(d)?"green":"red"); });
 
   //add min, max
   olhc.selectAll("text.min_max").remove();
