@@ -10,8 +10,9 @@ var olhc_list = [];
 
 //loop();
 setup_pusher();
-getOLHCPeriod(1401035200 , 1401275200, 0);
-//getNewOLHC(0);
+//getOLHCPeriod(1401035200 , 1401275200, 0);
+getOLHC(0, function() { init(); });
+
 
 function loop() {
   var updateRedis = function(){	
@@ -48,7 +49,7 @@ function addOLHC(obj) {
   console.log('old ' + oldest_timestamp + ' lastest ' + lastest_timestamp);
 }
 
-function mergeOldOLHC(list) {
+function mergeOldOLHC(list, callback) {
   if(list == null)
     return;
 
@@ -68,7 +69,8 @@ function mergeOldOLHC(list) {
 
   //merge
   console.log('old ' + oldest_timestamp + ' lastest ' + lastest_timestamp);
-  init();
+  
+  callback();
 }
 
 function updateOldestTimestamp(oldest) {
@@ -80,23 +82,34 @@ function updateLastestTimestamp(latest) {
     lastest_timestamp = latest;
 }
 
-function getOLHC(count) {
+function getOLHC(count, callback) {
   $.ajax({
     type:'GET',
     url:'http://localhost:3000',
     success:function(json){
-      mergeOldOLHC(json);
+        mergeOldOLHC(json, callback);
     },
     error:function(request,status,error){ console.log("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error); }
   });
 }
 
-function getOLHCPeriod(start_timestamp, end_timestamp, count) {
+function getOldOLHC(count, callback) {
+    $.ajax({
+        type:'GET',
+        url:'http://localhost:3000/old?end=' + oldest_timestamp,
+        success:function(json){
+          mergeOldOLHC(json, callback);
+        },
+        error:function(request,status,error){ console.log("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error); }
+    });
+}
+
+function getOLHCPeriod(start_timestamp, end_timestamp, count, callback) {
   $.ajax({
     type:'GET',
     url:'http://localhost:3000/period?start=' + start_timestamp + '&end=' + end_timestamp,
     success:function(json){
-      mergeOldOLHC(json);
+      mergeOldOLHC(json, callback);
     },
     error:function(request,status,error){ console.log("code:"+request.status+"\n"+"message:"+request.responseText+"\n"+"error:"+error); }
   });

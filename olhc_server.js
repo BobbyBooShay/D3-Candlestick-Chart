@@ -38,6 +38,16 @@ app.get('/new', function(req, res){
   });
 });
 
+app.get('/old', function(req, res){
+    getOldOLHC(req.query.end, graph_type, function(err, result) {
+        if(err)
+            console.log('SQLError ' + err);
+
+        res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
+        res.end(result);
+    });
+});
+
 app.get('/', function(req, res){
   getOLHC(graph_type, function(err, result) {
     if(err)
@@ -66,11 +76,16 @@ function getOLHCPeriod(start_timestamp, end_timestamp, graph_type, callback) {
   return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + graph_type + ' where timestamp BETWEEN ' + start_timestamp + ' AND ' + end_timestamp, callback);
 }
 
+function getOldOLHC(end_timestamp, graph_type, callback) {
+    return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + graph_type + ' where timestamp BETWEEN ' + (end_timestamp - 2678400) + ' AND ' + (end_timestamp-1), callback);
+}
+
 function getOLHC(graph_type, callback) {
   return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + graph_type + ' where date BETWEEN DATE_SUB(NOW(), INTERVAL 31 DAY) AND NOW()', callback);
 }
 
 function getSQL(query, callback) {
+  console.log('Query : ' + query);
   conn.pingSync();
   conn.query(query, function(err, results) {
     if (err)

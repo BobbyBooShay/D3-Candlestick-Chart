@@ -55,7 +55,7 @@ function limit_dataset(data_size, offset_from_back) {
 }
 
 var move_offset = 0;
-
+var is_loading = false;
 function refresh(offset) {
     move_offset += offset;
 
@@ -67,8 +67,10 @@ function refresh(offset) {
     
 
     var dataset = limit_dataset(WINDOW_SIZE * (last_zoom_scale), move_offset);     
-    if(olhc_list.length * 0.6 < (WINDOW_SIZE * (last_zoom_scale) + move_offset))
+    if(olhc_list.length * 0.6 < (WINDOW_SIZE * (last_zoom_scale) + move_offset) && !is_loading)
     {
+        getOldOLHC(0, function() { console.log('loading done'); is_loading = false; } );
+        is_loading = true;
         console.log('need more loading');
     }
     
