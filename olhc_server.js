@@ -66,6 +66,7 @@ function getOLHC(graph_type, callback) {
 }
 
 function getSQL(query, callback) {
+  conn.pingSync();
   conn.query(query, function(err, results) {
     if (err)
       return callback(err, null);
