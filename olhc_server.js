@@ -15,44 +15,44 @@ if (!conn.connectedSync()) {
 }
 
 var sockets_list = [];
-var graph_type = '15m';
+//var graph_type = '15m';
 
 var app = express();
 app.get('/period', function(req, res){
-  getOLHCPeriod(req.query.start, req.query.end, graph_type, function(err, result) {
+  getOLHCPeriod(req.query.start, req.query.end, req.query.type, function(err, result) {
     if(err)
       console.log('SQLError ' + err);
-    
+
     res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
     res.end(result);
   });
 });
 
 app.get('/new', function(req, res){
-  getNewOLHC(req.query.start, graph_type, function(err, result) {
+  getNewOLHC(req.query.start, req.query.type, function(err, result) {
     if(err)
       console.log('SQLError ' + err);
-    
+
     res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
     res.end(result);
   });
 });
 
 app.get('/old', function(req, res){
-    getOldOLHC(req.query.end, graph_type, function(err, result) {
-        if(err)
-            console.log('SQLError ' + err);
+  getOldOLHC(req.query.end, req.query.type, function(err, result) {
+    if(err)
+      console.log('SQLError ' + err);
 
-        res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
-        res.end(result);
-    });
+    res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
+    res.end(result);
+  });
 });
 
 app.get('/', function(req, res){
-  getOLHC(graph_type, function(err, result) {
+  getOLHC(req.query.type, function(err, result) {
     if(err)
       console.log('SQLError ' + err);
-    
+
     res.writeHead(200, {'Content-Type': 'application/json', 'Access-Control-Allow-Origin':'*'});
     res.end(result);
   });
@@ -65,23 +65,23 @@ app.listen(3000);
 function getNewOLHC(start_timestamp, graph_type, callback) {
   start_timestamp = parseInt(start_timestamp);
 
-  return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + graph_type + ' where timestamp >= ' + start_timestamp, callback);
+  return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + (graph_type/60 + 'm') + ' where timestamp >= ' + start_timestamp, callback);
 }
 
 
 function getOLHCPeriod(start_timestamp, end_timestamp, graph_type, callback) {
   start_timestamp = parseInt(start_timestamp);
   end_timestamp = parseInt(end_timestamp);
-  
-  return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + graph_type + ' where timestamp BETWEEN ' + start_timestamp + ' AND ' + end_timestamp, callback);
+
+  return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + (graph_type/60 + 'm') + ' where timestamp BETWEEN ' + start_timestamp + ' AND ' + end_timestamp, callback);
 }
 
 function getOldOLHC(end_timestamp, graph_type, callback) {
-    return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + graph_type + ' where timestamp BETWEEN ' + (end_timestamp - 2678400) + ' AND ' + (end_timestamp-1), callback);
+  return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + (graph_type/60 + 'm') + ' where timestamp BETWEEN ' + (end_timestamp - 2678400) + ' AND ' + (end_timestamp-1), callback);
 }
 
 function getOLHC(graph_type, callback) {
-  return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + graph_type + ' where date BETWEEN DATE_SUB(NOW(), INTERVAL 31 DAY) AND NOW()', callback);
+  return getSQL('SELECT timestamp as t, open as o, low as l, high as h, close as c, volume as v FROM OLHC_' + (graph_type/60 + 'm') + ' where date BETWEEN DATE_SUB(NOW(), INTERVAL ' + ((graph_type/60) * 1440) + ' MINUTE ) AND NOW()', callback);
 }
 
 function getSQL(query, callback) {
@@ -127,7 +127,7 @@ server.listen(8000);
 try
 {
     pusherType();
-    
+
 }
 catch(e)
 {
@@ -138,7 +138,7 @@ catch(e)
 function pusherType() {
     pusher.on('connect', function(){
         console.log('connected');      
-      
+
         var trade = pusher.subscribe("live_trades");
         trade.on('success', function(a){
             trade.on('trade', function(msg){
@@ -148,7 +148,7 @@ function pusherType() {
             });
         });
     });
-  
+
     pusher.connect();
 };
 */
