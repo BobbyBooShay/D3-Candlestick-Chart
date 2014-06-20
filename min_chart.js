@@ -176,7 +176,12 @@ function update_olhc(dataset)
   .attr("x", function(d, i) { return x_scale(i); })
   .attr("width", x_scale.rangeBand())
   .attr("y", function(d, i) { return y_scale(Math.max(c(d), o(d))); })
-  .attr("height", function(d) { return Math.abs(y_scale(o(d))-y_scale(c(d))); })
+  .attr("height", function(d) { 
+    var height = Math.abs(y_scale(o(d))-y_scale(c(d)));
+    if(height == 0)
+      height = 0.1;
+    return height; 
+  })
   .attr("class", function(d) { return (o(d) <= c(d)?"green":"red"); });
 
   //add min, max
