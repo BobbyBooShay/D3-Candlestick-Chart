@@ -9,6 +9,11 @@ var http = require('http'),
 conn.connectSync('localhost', 'root', '', 'bitstamp');
 conn.setCharsetSync('utf8');
 
+if (!conn.connectedSync()) {
+  util.puts("Connection error " + conn.connectErrno + ": " + conn.connectError);
+  process.exit(1);
+}
+
 var sockets_list = [];
 var graph_type = '15m';
 
@@ -81,6 +86,9 @@ function getSQL(query, callback) {
   });
 }
 
+process.on('exit', function () {
+  conn.closeSync();
+});
 /*
 //pusher -> faye broadcasting
 var lastUpdate;
