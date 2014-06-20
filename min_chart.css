@@ -20,12 +20,16 @@ body {
 }
 
 .outer {
-    fill: none;
+    fill: white;
     stroke: #000;
 }
 
 .inner {
-    fill: #ccc;
+    fill: white;
     stroke: #000;
     stroke-dasharray: 3, 4;
+}
+
+rect {
+  fill: white;
 }
